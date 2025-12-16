@@ -4,14 +4,18 @@ import androidx.room.RoomDatabase
 import android.content.Context
 import androidx.room.Room
 
-// Список всех Entity и версия базы данных
-@Database(entities = [Note::class], version = 1, exportSchema = false)
+
+
+@Database(entities = [Note::class, Attachment::class], version = 2, exportSchema = false)
 abstract class NoteDatabase : RoomDatabase() {
 
     abstract fun noteDao(): NoteDao
 
+
+    abstract fun attachmentDao(): AttachmentDao
+
     companion object {
-        // Singleton предотвращает создание нескольких экземпляров базы данных
+
         @Volatile
         private var INSTANCE: NoteDatabase? = null
 
@@ -21,7 +25,11 @@ abstract class NoteDatabase : RoomDatabase() {
                     context.applicationContext,
                     NoteDatabase::class.java,
                     "note_database"
-                ).build()
+                )
+
+
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

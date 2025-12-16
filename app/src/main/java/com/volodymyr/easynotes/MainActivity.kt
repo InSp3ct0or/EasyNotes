@@ -9,32 +9,34 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-// ... (другие импорты)
-import androidx.compose.runtime.livedata.observeAsState // Для observeAsState
-import androidx.lifecycle.viewmodel.compose.viewModel // Для функции viewModel()
-// ...
-
-// Импорт классов данных и viewmodel
-import com.volodymyr.easynotes.data.Note
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.volodymyr.easynotes.viewmodel.NoteViewModel
 import com.volodymyr.easynotes.viewmodel.NoteViewModelFactory
-
-// Импорт вашей темы
 import com.volodymyr.easynotes.ui.theme.EasyNotesTheme
-
-// НОВОЕ ИСПРАВЛЕНИЕ: Явный импорт класса Application
 import com.volodymyr.easynotes.EasyNotesApplication
+import com.volodymyr.easynotes.NoteDestinations.DRAWING_ROUTE
+import com.volodymyr.easynotes.NoteDestinations.NOTE_DETAIL_FULL_ROUTE
+import com.volodymyr.easynotes.NoteDestinations.NOTE_DETAIL_ROUTE
+import com.volodymyr.easynotes.NoteDestinations.NOTES_ROUTE
+import com.volodymyr.easynotes.NoteDestinations.NOTE_ID_KEY
+
+// Импорт NotesScreen
+import com.volodymyr.easynotes.NotesScreen
+// НОВЫЙ ИМПОРТ: NoteDetailScreen
+import com.volodymyr.easynotes.NoteDetailScreen
+import com.volodymyr.easynotes.data.Note
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Получаем экземпляр Application для доступа к Repository
         val application = application as EasyNotesApplication
 
         setContent {
@@ -43,12 +45,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Создаем ViewModel с помощью нашей Factory
                     val noteViewModel: NoteViewModel = viewModel(
                         factory = NoteViewModelFactory(application.repository)
                     )
 
-                    // Передаем ViewModel в наш главный UI-компонент
                     NoteApp(noteViewModel = noteViewModel)
                 }
             }
@@ -56,37 +56,52 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Главный контейнер для Compose UI
- */
+
 @Composable
 fun NoteApp(
     noteViewModel: NoteViewModel,
     modifier: Modifier = Modifier
 ) {
-    // Наблюдаем за LiveData из ViewModel и получаем ее состояние в Compose
+    val navController = rememberNavController()
+
     val notes: List<Note> by noteViewModel.allNotes.observeAsState(initial = emptyList())
 
-    // Здесь будет размещен ваш главный экран со списком заметок и кнопкой добавления
-    NotesScreen(
-        notes = notes,
-        onNoteClick = { /* TODO: Открыть экран редактирования */ },
-        onDeleteClick = { noteViewModel.delete(it) }
-    )
-}
+    NavHost(
+        navController = navController,
+        startDestination = NOTES_ROUTE,
+        modifier = modifier
+    ) {
+        // 1. Компоновщик для экрана списка заметок
+        composable(NOTES_ROUTE) {
+            NotesScreen(
+                notes = notes,
+                onNoteClick = { note ->
+                    navController.navigate("$NOTE_DETAIL_ROUTE/${note.id}")
+                },
+                onDeleteClick = { noteViewModel.delete(it) },
+                onAddNoteClick = {
+                    navController.navigate("$NOTE_DETAIL_ROUTE/0")
+                }
+            )
+        }
 
-/**
- * ЗАГЛУШКА: Создайте этот файл, чтобы определить ваш основной экран с заметками.
- */
-@Composable
-fun NotesScreen(
-    notes: List<Note>,
-    onNoteClick: (Note) -> Unit,
-    onDeleteClick: (Note) -> Unit
-) {
-    // TODO: Реализация списка заметок (например, с помощью LazyColumn)
-    // Сейчас это просто заглушка
+        // 2. Компоновщик для экрана добавления/редактирования (ТЕПЕРЬ С NoteDetailScreen)
+        composable(
+            route = NOTE_DETAIL_FULL_ROUTE,
+            arguments = listOf(navArgument(NOTE_ID_KEY) { type = NavType.IntType })
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getInt(NOTE_ID_KEY) ?: 0
 
-    // Пример вывода для проверки (требуется import androidx.compose.material3.Text, если вы его используете):
-    // Text("Всего заметок: ${notes.size}")
+            NoteDetailScreen(
+                noteId = noteId,
+                navController = navController,
+                noteViewModel = noteViewModel
+            )
+        }
+
+        // 3. Новый компоновщик для экрана рисования
+        composable(DRAWING_ROUTE) {
+            DrawingScreen()
+        }
+    }
 }
