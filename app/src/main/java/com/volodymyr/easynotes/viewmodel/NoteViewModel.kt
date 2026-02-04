@@ -24,7 +24,6 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
     private val _isDarkMode = MutableStateFlow(false)
     val isDarkMode = _isDarkMode.asLiveData()
 
-    // Объединяем поток всех заметок, поисковый запрос и порядок сортировки
     val allNotes = combine(
         repository.allNotes,
         _searchQuery,

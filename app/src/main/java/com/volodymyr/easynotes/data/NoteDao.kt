@@ -30,7 +30,6 @@ interface NoteDao {
     @Query("DELETE FROM note_table")
     suspend fun deleteAll()
 
-    // ИСПРАВЛЕНИЕ 4: Добавлен метод для загрузки заметки по ID
     @Query("SELECT * FROM note_table WHERE id = :noteId")
     suspend fun getNoteById(noteId: Int): Note?
 }

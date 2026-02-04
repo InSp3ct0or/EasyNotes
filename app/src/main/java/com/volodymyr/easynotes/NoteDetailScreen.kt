@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -38,11 +39,9 @@ fun NoteDetailScreen(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
 
-    // Используем rememberSaveable для сохранения текста при повороте экрана
     var title by rememberSaveable { mutableStateOf("") }
     var content by rememberSaveable { mutableStateOf("") }
     
-    // Для сложных типов данных, таких как Color, используем Argb для сохранения
     var selectedNoteColorArgb by rememberSaveable { mutableIntStateOf(noteColors.first().toArgb()) }
     val selectedNoteColor = Color(selectedNoteColorArgb)
     
@@ -70,13 +69,12 @@ fun NoteDetailScreen(
     var boxHeight by remember { mutableFloatStateOf(0f) }
     var titleHeight by remember { mutableFloatStateOf(0f) }
 
-    // Вычисляем минимальную высоту области контента, чтобы она занимала весь экран ниже заголовка
     val minContentHeight = remember(boxHeight, titleHeight) {
         val availableHeight = boxHeight - titleHeight
         if (availableHeight > 0) {
             with(density) { availableHeight.toDp() }
         } else {
-            300.dp // Значение по умолчанию, если высота еще не измерена
+            300.dp
         }
     }
 
@@ -96,6 +94,8 @@ fun NoteDetailScreen(
                 title = loadedNote.title
                 content = loadedNote.content
                 selectedNoteColorArgb = loadedNote.color
+                textColorArgb = loadedNote.textColor
+                fontSizeValue = loadedNote.fontSize
                 loadedNote.drawingPathsJson?.let {
                     if (it.isNotEmpty()) {
                         drawingPaths.clear()
@@ -115,7 +115,9 @@ fun NoteDetailScreen(
                 timestamp = existingNote?.timestamp ?: System.currentTimeMillis(),
                 color = selectedNoteColorArgb,
                 drawingPathsJson = if (drawingPaths.isNotEmpty()) PathConverter.pathsToJson(drawingPaths) else null,
-                imagePath = existingNote?.imagePath // Сохраняем путь к изображению
+                imagePath = existingNote?.imagePath,
+                textColor = textColorArgb,
+                fontSize = fontSizeValue
             )
             if (isNewNote) noteViewModel.insert(noteToSave) else noteViewModel.update(noteToSave)
             navController.popBackStack()
@@ -165,12 +167,11 @@ fun NoteDetailScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState, enabled = !isInDrawingMode)
             ) {
-                // Поле "Тема" (Title)
                 TextField(
                     value = title,
                     onValueChange = { title = it },
                     enabled = !isInDrawingMode,
-                    label = { Text("Тема") },
+                    label = { Text(stringResource(R.string.topic)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -193,10 +194,9 @@ fun NoteDetailScreen(
                         .fillMaxWidth()
                         .heightIn(min = minContentHeight)
                 ) {
-                    // СЛОЙ РИСОВАНИЯ
                     Canvas(
                         modifier = Modifier
-                            .matchParentSize() // Теперь Canvas всегда равен размеру Box (минимум до низа экрана)
+                            .matchParentSize()
                             .zIndex(if (isInDrawingMode) 1f else 0f)
                             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                             .pointerInput(isInDrawingMode) {
@@ -248,7 +248,6 @@ fun NoteDetailScreen(
                         }
                     }
 
-                    // СЛОЙ ТЕКСТА (КОНТЕНТ)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -259,7 +258,7 @@ fun NoteDetailScreen(
                             value = content,
                             onValueChange = { content = it },
                             enabled = !isInDrawingMode,
-                            placeholder = { Text("Начните писать...") },
+                            placeholder = { Text(stringResource(R.string.start_writing)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = minContentHeight),

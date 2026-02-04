@@ -19,13 +19,15 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.volodymyr.easynotes.data.Note
-import com.volodymyr.easynotes.data.TextFormatConverter
 import com.volodymyr.easynotes.viewmodel.SortOrder
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -42,9 +44,18 @@ fun NotesScreen(
     onDarkModeToggle: (Boolean) -> Unit,
     onNoteClick: (Note) -> Unit,
     onDeleteClick: (Note) -> Unit,
-    onAddNoteClick: () -> Unit
+    onAddNoteClick: () -> Unit,
+    onLanguageSelected: (String) -> Unit
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
+    if (showLanguageDialog) {
+        LanguageDialog(
+            onDismiss = { showLanguageDialog = false },
+            onLanguageSelected = onLanguageSelected
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -60,7 +71,8 @@ fun NotesScreen(
                 sortOrder = sortOrder,
                 onSortOrderChange = onSortOrderChange,
                 isDarkMode = isDarkMode,
-                onDarkModeToggle = onDarkModeToggle
+                onDarkModeToggle = onDarkModeToggle,
+                onLanguageClick = { showLanguageDialog = true }
             )
         },
         floatingActionButton = { NoteFAB(onAddNoteClick = onAddNoteClick) },
@@ -85,7 +97,8 @@ fun NotesAppBar(
     sortOrder: SortOrder,
     onSortOrderChange: (SortOrder) -> Unit,
     isDarkMode: Boolean,
-    onDarkModeToggle: (Boolean) -> Unit
+    onDarkModeToggle: (Boolean) -> Unit,
+    onLanguageClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -102,7 +115,7 @@ fun NotesAppBar(
                 TextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Поиск заметок...", fontSize = 18.sp) },
+                    placeholder = { Text(stringResource(R.string.search_notes_placeholder), fontSize = 18.sp) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
@@ -118,15 +131,9 @@ fun NotesAppBar(
                 )
             } else {
                 Column(Modifier.padding(top = 8.dp)) {
-                    Text("Все заметки", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                    Text(stringResource(R.string.all_notes), fontWeight = FontWeight.Bold, fontSize = 24.sp)
                     Text(
-                        text = "$noteCount замет${
-                            when {
-                                noteCount % 10 == 1 && noteCount % 100 != 11 -> "ка"
-                                noteCount % 10 in 2..4 && noteCount % 100 !in 12..14 -> "ки"
-                                else -> "ок"
-                            }
-                        }",
+                        text = LocalContext.current.resources.getQuantityString(R.plurals.notes_count, noteCount, noteCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -136,25 +143,25 @@ fun NotesAppBar(
         navigationIcon = {
             if (isSearchActive) {
                 IconButton(onClick = onSearchToggle) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                 }
             }
         },
         actions = {
             if (!isSearchActive) {
                 IconButton(onClick = onSearchToggle) {
-                    Icon(Icons.Filled.Search, contentDescription = "Поиск")
+                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
                 }
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "Опции")
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.options))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("По дате (новые)") },
+                            text = { Text(stringResource(R.string.sort_by_date)) },
                             onClick = { 
                                 onSortOrderChange(SortOrder.BY_DATE)
                                 showMenu = false 
@@ -168,7 +175,7 @@ fun NotesAppBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("По названию") },
+                            text = { Text(stringResource(R.string.sort_by_title)) },
                             onClick = { 
                                 onSortOrderChange(SortOrder.BY_TITLE)
                                 showMenu = false 
@@ -189,7 +196,7 @@ fun NotesAppBar(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Тёмная тема")
+                                    Text(stringResource(R.string.dark_theme))
                                     Switch(
                                         checked = isDarkMode,
                                         onCheckedChange = { 
@@ -207,15 +214,18 @@ fun NotesAppBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Настройки") },
-                            onClick = { showMenu = false },
-                            leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                            text = { Text(stringResource(R.string.language)) },
+                            onClick = {
+                                showMenu = false
+                                onLanguageClick()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Language, contentDescription = null) }
                         )
                     }
                 }
             } else if (searchQuery.isNotEmpty()) {
                 IconButton(onClick = { onSearchQueryChange("") }) {
-                    Icon(Icons.Default.Close, contentDescription = "Очистить")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear))
                 }
             }
         },
@@ -227,9 +237,46 @@ fun NotesAppBar(
 }
 
 @Composable
+fun LanguageDialog(
+    onDismiss: () -> Unit,
+    onLanguageSelected: (String) -> Unit
+) {
+    val languages = mapOf(
+        "en" to "English",
+        "ru" to "Русский",
+        "cs" to "Čeština"
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.select_language)) },
+        text = {
+            Column {
+                languages.forEach { (locale, name) ->
+                    Text(
+                        text = name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onLanguageSelected(locale)
+                                onDismiss()
+                            }
+                            .padding(vertical = 12.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
 fun NoteFAB(onAddNoteClick: () -> Unit) {
     FloatingActionButton(onClick = onAddNoteClick) {
-        Icon(Icons.Filled.Add, contentDescription = "Добавить заметку")
+        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_note))
     }
 }
 
@@ -242,7 +289,7 @@ fun EmptyState(paddingValues: PaddingValues, isSearchActive: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = if (isSearchActive) "Ничего не найдено" else "У вас пока нет заметок. Нажмите + чтобы создать первую!",
+            text = if (isSearchActive) stringResource(R.string.nothing_found) else stringResource(R.string.empty_state_message),
             color = Color.Gray
         )
     }
@@ -277,7 +324,6 @@ fun NoteCard(
     onNoteClick: (Note) -> Unit,
     onDeleteClick: (Note) -> Unit
 ) {
-    // Адаптация цвета под темную тему
     val cardAlpha = if (isDarkMode) 0.5f else 0.3f
     val containerColor = Color(note.color).copy(alpha = cardAlpha)
 
@@ -298,7 +344,7 @@ fun NoteCard(
             
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = note.title.ifEmpty { "(Без заголовка)" },
+                    text = note.title.ifEmpty { stringResource(R.string.untitled) },
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     maxLines = 1,
@@ -306,14 +352,12 @@ fun NoteCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Декодируем форматированный текст
-                val annotatedContent = remember(note.content) {
-                    TextFormatConverter.fromJson(note.content)
-                }
-                
                 Text(
-                    text = annotatedContent,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = note.content,
+                    style = TextStyle(
+                        color = Color(note.textColor),
+                        fontSize = note.fontSize.sp
+                    ),
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -324,14 +368,14 @@ fun NoteCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Создано: ${SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(java.util.Date(note.timestamp))}",
+                        text = stringResource(R.string.created_at, SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(java.util.Date(note.timestamp))),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     IconButton(onClick = { onDeleteClick(note) }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Удалить заметку",
+                            contentDescription = stringResource(R.string.delete_note),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
@@ -355,7 +399,7 @@ fun NoteImageSection(imagePath: String) {
     ) {
         AsyncImage(
             model = imagePath,
-            contentDescription = "Изображение заметки",
+            contentDescription = stringResource(R.string.note_image),
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -376,7 +420,7 @@ fun NoteImageSection(imagePath: String) {
         ) {
             Icon(
                 imageVector = Icons.Default.RotateRight,
-                contentDescription = "Повернуть",
+                contentDescription = stringResource(R.string.rotate),
                 modifier = Modifier.padding(6.dp)
             )
         }

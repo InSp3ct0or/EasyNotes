@@ -26,7 +26,6 @@ fun DrawingScreen() {
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        // Начинаем новый путь с одной точки
                         drawingPaths.add(
                             DrawingPath(
                                 points = listOf(PathPoint(offset.x, offset.y, isMoveTo = true)),
@@ -39,9 +38,7 @@ fun DrawingScreen() {
                         change.consume()
                         val lastPath = drawingPaths.lastOrNull()
                         if (lastPath != null) {
-                            // Создаем новый список точек, добавляя новую
                             val updatedPoints = lastPath.points + PathPoint(change.position.x, change.position.y)
-                            // Заменяем старый путь новым, чтобы вызвать рекомпозицию
                             drawingPaths[drawingPaths.lastIndex] = lastPath.copy(points = updatedPoints)
                         }
                     }
@@ -51,12 +48,12 @@ fun DrawingScreen() {
         drawingPaths.forEach { drawingPath ->
             if (drawingPath.points.isNotEmpty()) {
                 drawPath(
-                    path = drawingPath.createComposePath(), // Используем метод
-                    brush = drawingPath.brush, // Используем кисть из модели
+                    path = drawingPath.createComposePath(),
+                    brush = drawingPath.brush,
                     style = Stroke(
                         width = drawingPath.strokeWidth,
-                        cap = StrokeCap.Round, // Сглаживаем концы линий
-                        join = StrokeJoin.Round // Сглаживаем углы
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
                     )
                 )
             }

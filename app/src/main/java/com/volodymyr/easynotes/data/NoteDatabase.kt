@@ -4,13 +4,10 @@ import androidx.room.RoomDatabase
 import android.content.Context
 import androidx.room.Room
 
-
-
-@Database(entities = [Note::class, Attachment::class], version = 4, exportSchema = false)
+@Database(entities = [Note::class, Attachment::class], version = 5, exportSchema = false)
 abstract class NoteDatabase : RoomDatabase() {
 
     abstract fun noteDao(): NoteDao
-
 
     abstract fun attachmentDao(): AttachmentDao
 
@@ -26,8 +23,6 @@ abstract class NoteDatabase : RoomDatabase() {
                     NoteDatabase::class.java,
                     "note_database"
                 )
-
-
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

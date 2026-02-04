@@ -1,3 +1,56 @@
 <resources>
     <string name="app_name">EasyNotes</string>
+
+    <!-- NotesScreen -->
+    <string name="search_notes_placeholder">Search notes...</string>
+    <string name="all_notes">All notes</string>
+    <string name="back">Back</string>
+    <string name="search">Search</string>
+    <string name="options">Options</string>
+    <string name="sort_by_date">By date (newest)</string>
+    <string name="sort_by_title">By title</string>
+    <string name="dark_theme">Dark theme</string>
+    <string name="language">Language</string>
+    <string name="clear">Clear</string>
+    <string name="add_note">Add note</string>
+    <string name="nothing_found">Nothing found</string>
+    <string name="empty_state_message">You have no notes yet. Press + to create the first one!</string>
+    <string name="untitled">(Untitled)</string>
+    <string name="created_at">Created: %s</string>
+    <string name="delete_note">Delete note</string>
+    <string name="note_image">Note image</string>
+    <string name="rotate">Rotate</string>
+    <string name="select_language">Select language</string>
+
+    <!-- NoteDetailScreen -->
+    <string name="topic">Topic</string>
+    <string name="start_writing">Start writing...</string>
+
+    <!-- DrawingComponents -->
+    <string name="drawing">Drawing</string>
+    <string name="new_note">New note</string>
+    <string name="edit_note">Edit note</string>
+    <string name="cancel">Cancel</string>
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
+    <string name="confirm">Confirm</string>
+    <string name="note_color">Note color</string>
+    <string name="color">Color</string>
+    <string name="save">Save</string>
+    <string name="color_picker">Color picker</string>
+    <string name="font_size">Font size</string>
+    <string name="selected">Selected</string>
+    <string name="drag_handle">Drag handle</string>
+    <string name="brush">Brush</string>
+    <string name="pencil">Pencil</string>
+    <string name="marker">Marker</string>
+    <string name="eraser">Eraser</string>
+    <string name="stroke_width">Stroke width</string>
+    <string name="opacity">Opacity</string>
+
+    <!-- Plurals for note count -->
+    <plurals name="notes_count">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
 </resources>

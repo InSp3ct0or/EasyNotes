@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">EasyNotes</string>
+
+    <!-- NotesScreen -->
+    <string name="search_notes_placeholder">Hledat poznámky...</string>
+    <string name="all_notes">Všechny poznámky</string>
+    <string name="back">Zpět</string>
+    <string name="search">Hledat</string>
+    <string name="options">Možnosti</string>
+    <string name="sort_by_date">Podle data (nejnovější)</string>
+    <string name="sort_by_title">Podle názvu</string>
+    <string name="dark_theme">Tmavý režim</string>
+    <string name="language">Jazyk</string>
+    <string name="clear">Vymazat</string>
+    <string name="add_note">Přidat poznámku</string>
+    <string name="nothing_found">Nic nenalezeno</string>
+    <string name="empty_state_message">Zatím nemáte žádné poznámky. Stiskněte + pro vytvoření první!</string>
+    <string name="untitled">(Bez názvu)</string>
+    <string name="created_at">Vytvořeno: %s</string>
+    <string name="delete_note">Smazat poznámku</string>
+    <string name="note_image">Obrázek poznámky</string>
+    <string name="rotate">Otočit</string>
+    <string name="select_language">Vyberte jazyk</string>
+
+    <!-- NoteDetailScreen -->
+    <string name="topic">Téma</string>
+    <string name="start_writing">Začněte psát...</string>
+
+    <!-- DrawingComponents -->
+    <string name="drawing">Kreslení</string>
+    <string name="new_note">Nová poznámka</string>
+    <string name="edit_note">Upravit poznámku</string>
+    <string name="cancel">Zrušit</string>
+    <string name="undo">Zpět</string>
+    <string name="redo">Znovu</string>
+    <string name="confirm">Potvrdit</string>
+    <string name="note_color">Barva poznámky</string>
+    <string name="color">Barva</string>
+    <string name="save">Uložit</string>
+    <string name="color_picker">Výběr barvy</string>
+    <string name="font_size">Velikost písma</string>
+    <string name="selected">Vybráno</string>
+    <string name="drag_handle">Přetáhnout</string>
+    <string name="brush">Štětec</string>
+    <string name="pencil">Tužka</string>
+    <string name="marker">Zvýrazňovač</string>
+    <string name="eraser">Guma</string>
+    <string name="stroke_width">Tloušťka</string>
+    <string name="opacity">Neprůhlednost</string>
+
+    <!-- Plurals for note count -->
+    <plurals name="notes_count">
+        <item quantity="one">%d poznámka</item>
+        <item quantity="few">%d poznámky</item>
+        <item quantity="many">%d poznámek</item>
+        <item quantity="other">%d poznámek</item>
+    </plurals>
+</resources>

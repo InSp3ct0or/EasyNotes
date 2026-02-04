@@ -4,15 +4,12 @@ import androidx.compose.ui.graphics.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-// ==================== ИНСТРУМЕНТЫ РИСОВАНИЯ ====================
 sealed interface DrawingTool {
     object Brush : DrawingTool
     object Pencil : DrawingTool
     object Marker : DrawingTool
     object Eraser : DrawingTool
 }
-
-// ==================== МОДЕЛИ ДАННЫХ ====================
 
 data class PathPoint(val x: Float, val y: Float, val isMoveTo: Boolean = false)
 
@@ -33,7 +30,6 @@ data class DrawingPath(
     }
 }
 
-// Модель для сохранения
 data class SerializableDrawingPath(
     val points: List<PathPoint>,
     val strokeWidth: Float,
@@ -42,7 +38,6 @@ data class SerializableDrawingPath(
     val gradientColors: List<Int>? = null
 )
 
-// ==================== КОНВЕРТЕР ПУТЕЙ ====================
 object PathConverter {
     private val gson = Gson()
 
@@ -58,7 +53,6 @@ object PathConverter {
                     )
                 }
                 else -> {
-                    // Пытаемся найти цвета градиента среди наших пресетов
                     val colors = findColorsForBrush(b)
                     if (colors.isNotEmpty()) {
                         SerializableDrawingPath(
@@ -68,7 +62,6 @@ object PathConverter {
                             gradientColors = colors.map { it.toArgb() }
                         )
                     } else {
-                        // Фолбек на черный цвет, если градиент не распознан
                         SerializableDrawingPath(
                             path.points, path.strokeWidth, path.alpha, Color.Black.toArgb()
                         )
@@ -97,9 +90,7 @@ object PathConverter {
         }
     }
 
-    // Сопоставляем кисть с нашими данными о цветах
     private fun findColorsForBrush(brush: Brush): List<Color> {
-        // Проверяем наши предопределенные градиенты
         if (brush == gradientBrushes[0]) return listOf(Color.Red, Color.Yellow)
         if (brush == gradientBrushes[1]) return listOf(Color.Green, Color.Blue)
         if (brush == gradientBrushes[2]) return listOf(Color.Magenta, Color.Cyan)

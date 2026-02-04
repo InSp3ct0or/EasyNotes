@@ -58,7 +58,6 @@ object TextFormatConverter {
             }
             builder.toAnnotatedString()
         } catch (e: Exception) {
-            // Fallback to plain text if JSON is invalid or it's an old note
             AnnotatedString(json)
         }
     }

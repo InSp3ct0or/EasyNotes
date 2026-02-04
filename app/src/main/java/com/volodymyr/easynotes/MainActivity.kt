@@ -1,8 +1,11 @@
 package com.volodymyr.easynotes
 
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -10,35 +13,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.volodymyr.easynotes.data.Note
+import com.volodymyr.easynotes.ui.theme.EasyNotesTheme
 import com.volodymyr.easynotes.viewmodel.NoteViewModel
 import com.volodymyr.easynotes.viewmodel.NoteViewModelFactory
 import com.volodymyr.easynotes.viewmodel.SortOrder
-import com.volodymyr.easynotes.ui.theme.EasyNotesTheme
-import com.volodymyr.easynotes.EasyNotesApplication
-import com.volodymyr.easynotes.NoteDestinations.DRAWING_ROUTE
-import com.volodymyr.easynotes.NoteDestinations.NOTE_DETAIL_FULL_ROUTE
-import com.volodymyr.easynotes.NoteDestinations.NOTE_DETAIL_ROUTE
-import com.volodymyr.easynotes.NoteDestinations.NOTES_ROUTE
-import com.volodymyr.easynotes.NoteDestinations.NOTE_ID_KEY
+import java.util.Locale
 
-// Импорт NotesScreen
-import com.volodymyr.easynotes.NotesScreen
-// НОВЫЙ ИМПОРТ: NoteDetailScreen
-import com.volodymyr.easynotes.NoteDetailScreen
-import com.volodymyr.easynotes.data.Note
+class MainActivity : AppCompatActivity() {
 
+    override fun attachBaseContext(newBase: Context) {
+        val sharedPreferences = newBase.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val language = sharedPreferences.getString("language", "en") ?: "en"
+        val locale = Locale(language)
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
 
-class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val application = application as EasyNotesApplication
+        val sharedPreferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
 
         setContent {
             val noteViewModel: NoteViewModel = viewModel(
@@ -51,7 +55,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NoteApp(noteViewModel = noteViewModel)
+                    NoteApp(
+                        noteViewModel = noteViewModel,
+                        onLanguageChange = {
+                            sharedPreferences.edit().putString("language", it).apply()
+                            recreate()
+                        }
+                    )
                 }
             }
         }
@@ -62,7 +72,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NoteApp(
     noteViewModel: NoteViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLanguageChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -73,11 +84,10 @@ fun NoteApp(
 
     NavHost(
         navController = navController,
-        startDestination = NOTES_ROUTE,
+        startDestination = NoteDestinations.NOTES_ROUTE,
         modifier = modifier
     ) {
-        // 1. Компоновщик для экрана списка заметок
-        composable(NOTES_ROUTE) {
+        composable(NoteDestinations.NOTES_ROUTE) {
             NotesScreen(
                 notes = notes,
                 searchQuery = searchQuery,
@@ -87,21 +97,21 @@ fun NoteApp(
                 isDarkMode = isDarkMode,
                 onDarkModeToggle = { noteViewModel.toggleDarkMode(it) },
                 onNoteClick = { note ->
-                    navController.navigate("$NOTE_DETAIL_ROUTE/${note.id}")
+                    navController.navigate("${NoteDestinations.NOTE_DETAIL_ROUTE}/${note.id}")
                 },
                 onDeleteClick = { noteViewModel.delete(it) },
                 onAddNoteClick = {
-                    navController.navigate("$NOTE_DETAIL_ROUTE/0")
-                }
+                    navController.navigate("${NoteDestinations.NOTE_DETAIL_ROUTE}/0")
+                },
+                onLanguageSelected = onLanguageChange
             )
         }
 
-        // 2. Компоновщик для экрана добавления/редактирования (ТЕПЕРЬ С NoteDetailScreen)
         composable(
-            route = NOTE_DETAIL_FULL_ROUTE,
-            arguments = listOf(navArgument(NOTE_ID_KEY) { type = NavType.IntType })
+            route = NoteDestinations.NOTE_DETAIL_FULL_ROUTE,
+            arguments = listOf(navArgument(NoteDestinations.NOTE_ID_KEY) { type = NavType.IntType })
         ) { backStackEntry ->
-            val noteId = backStackEntry.arguments?.getInt(NOTE_ID_KEY) ?: 0
+            val noteId = backStackEntry.arguments?.getInt(NoteDestinations.NOTE_ID_KEY) ?: 0
 
             NoteDetailScreen(
                 noteId = noteId,
@@ -110,8 +120,7 @@ fun NoteApp(
             )
         }
 
-        // 3. Новый компоновщик для экрана рисования
-        composable(DRAWING_ROUTE) {
+        composable(NoteDestinations.DRAWING_ROUTE) {
             DrawingScreen()
         }
     }

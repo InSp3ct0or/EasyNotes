@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">EasyNotes</string>
+
+    <!-- NotesScreen -->
+    <string name="search_notes_placeholder">Поиск заметок...</string>
+    <string name="all_notes">Все заметки</string>
+    <string name="back">Назад</string>
+    <string name="search">Поиск</string>
+    <string name="options">Опции</string>
+    <string name="sort_by_date">По дате (новые)</string>
+    <string name="sort_by_title">По названию</string>
+    <string name="dark_theme">Тёмная тема</string>
+    <string name="language">Язык</string>
+    <string name="clear">Очистить</string>
+    <string name="add_note">Добавить заметку</string>
+    <string name="nothing_found">Ничего не найдено</string>
+    <string name="empty_state_message">У вас пока нет заметок. Нажмите + чтобы создать первую!</string>
+    <string name="untitled">(Без заголовка)</string>
+    <string name="created_at">Создано: %s</string>
+    <string name="delete_note">Удалить заметку</string>
+    <string name="note_image">Изображение заметки</string>
+    <string name="rotate">Повернуть</string>
+    <string name="select_language">Выберите язык</string>
+
+    <!-- NoteDetailScreen -->
+    <string name="topic">Тема</string>
+    <string name="start_writing">Начните писать...</string>
+
+    <!-- DrawingComponents -->
+    <string name="drawing">Рисование</string>
+    <string name="new_note">Новая заметка</string>
+    <string name="edit_note">Редактировать заметку</string>
+    <string name="cancel">Отмена</string>
+    <string name="undo">Отменить</string>
+    <string name="redo">Повторить</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="note_color">Цвет заметки</string>
+    <string name="color">Цвет</string>
+    <string name="save">Сохранить</string>
+    <string name="color_picker">Выбор цвета</string>
+    <string name="font_size">Размер шрифта</string>
+    <string name="selected">Выбрано</string>
+    <string name="drag_handle">Переместить</string>
+    <string name="brush">Кисть</string>
+    <string name="pencil">Карандаш</string>
+    <string name="marker">Маркер</string>
+    <string name="eraser">Ластик</string>
+    <string name="stroke_width">Толщина</string>
+    <string name="opacity">Прозрачность</string>
+
+    <!-- Plurals for note count -->
+    <plurals name="notes_count">
+        <item quantity="one">%d заметка</item>
+        <item quantity="few">%d заметки</item>
+        <item quantity="many">%d заметок</item>
+        <item quantity="other">%d заметки</item>
+    </plurals>
+</resources>

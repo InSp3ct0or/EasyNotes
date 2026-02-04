@@ -18,10 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ==================== УТИЛИТЫ ====================
 fun getDrawingAttributes(
     tool: DrawingTool,
     strokeWidth: Float,
@@ -81,9 +81,9 @@ fun NoteDetailAppBar(
     TopAppBar(
         title = {
             Text(
-                if (isInDrawingMode) "Рисование"
-                else if (isNewNote) "Новая заметка"
-                else "Редактировать заметку"
+                if (isInDrawingMode) stringResource(R.string.drawing)
+                else if (isNewNote) stringResource(R.string.new_note)
+                else stringResource(R.string.edit_note)
             )
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -92,29 +92,29 @@ fun NoteDetailAppBar(
         navigationIcon = {
             if (isInDrawingMode) {
                 IconButton(onClick = onCancelDrawing) {
-                    Icon(Icons.Default.Close, contentDescription = "Отмена")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
                 }
             } else {
                 IconButton(onClick = onBackClick) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
+                    Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                 }
             }
         },
         actions = {
             if (isInDrawingMode) {
                 IconButton(onClick = onUndo, enabled = canUndo) {
-                    Icon(Icons.Default.Undo, contentDescription = "Отменить")
+                    Icon(Icons.Default.Undo, contentDescription = stringResource(R.string.undo))
                 }
                 IconButton(onClick = onRedo, enabled = canRedo) {
-                    Icon(Icons.Default.Redo, contentDescription = "Повторить")
+                    Icon(Icons.Default.Redo, contentDescription = stringResource(R.string.redo))
                 }
                 IconButton(onClick = onConfirmDrawing) {
-                    Icon(Icons.Default.Check, contentDescription = "Подтвердить")
+                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.confirm))
                 }
             } else {
                 Box {
                     IconButton(onClick = { showColorMenu = true }) {
-                        Icon(Icons.Default.ColorLens, contentDescription = "Цвет заметки")
+                        Icon(Icons.Default.ColorLens, contentDescription = stringResource(R.string.note_color))
                     }
                     DropdownMenu(
                         expanded = showColorMenu,
@@ -122,7 +122,7 @@ fun NoteDetailAppBar(
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(
-                                text = "Цвет",
+                                text = stringResource(R.string.color),
                                 style = MaterialTheme.typography.titleSmall,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
@@ -150,7 +150,7 @@ fun NoteDetailAppBar(
                 IconButton(onClick = onSaveClick) {
                     Icon(
                         Icons.Filled.Check,
-                        contentDescription = "Сохранить",
+                        contentDescription = stringResource(R.string.save),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -187,14 +187,14 @@ fun FormattingToolbar(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { showColorPicker = !showColorPicker }) {
-                        Icon(Icons.Default.Palette, contentDescription = "Выбор цвета")
+                        Icon(Icons.Default.Palette, contentDescription = stringResource(R.string.color_picker))
                     }
 
                     Row(
                         modifier = Modifier.padding(start = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.FormatSize, contentDescription = "Размер шрифта")
+                        Icon(Icons.Default.FormatSize, contentDescription = stringResource(R.string.font_size))
                         Spacer(Modifier.width(8.dp))
                         fontSizes.forEachIndexed { index, size ->
                             val label = when (index) {
@@ -217,7 +217,7 @@ fun FormattingToolbar(
                 Button(onClick = onDrawingClick) {
                     Icon(Icons.Default.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Рисование")
+                    Text(stringResource(R.string.drawing))
                 }
             }
 
@@ -244,7 +244,7 @@ fun FormattingToolbar(
                             if (isSelected) {
                                 Icon(
                                     Icons.Default.Check,
-                                    contentDescription = "Выбрано",
+                                    contentDescription = stringResource(R.string.selected),
                                     tint = if (color == Color.Black) Color.White else Color.Black,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -282,7 +282,7 @@ fun DrawingToolbar(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(Icons.Filled.DragHandle, contentDescription = "Переместить", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Filled.DragHandle, contentDescription = stringResource(R.string.drag_handle), tint = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -291,25 +291,25 @@ fun DrawingToolbar(
             ) {
                 ToolIconButton(
                     icon = Icons.Default.Brush,
-                    label = "Кисть",
+                    label = stringResource(R.string.brush),
                     isSelected = currentTool is DrawingTool.Brush
                 ) { onToolChange(DrawingTool.Brush) }
                 
                 ToolIconButton(
                     icon = Icons.Default.Create,
-                    label = "Карандаш",
+                    label = stringResource(R.string.pencil),
                     isSelected = currentTool is DrawingTool.Pencil
                 ) { onToolChange(DrawingTool.Pencil) }
                 
                 ToolIconButton(
                     icon = Icons.Default.Star,
-                    label = "Маркер",
+                    label = stringResource(R.string.marker),
                     isSelected = currentTool is DrawingTool.Marker
                 ) { onToolChange(DrawingTool.Marker) }
                 
                 ToolIconButton(
                     icon = Icons.Default.DeleteOutline,
-                    label = "Ластик",
+                    label = stringResource(R.string.eraser),
                     isSelected = currentTool is DrawingTool.Eraser
                 ) { onToolChange(DrawingTool.Eraser) }
             }
@@ -362,13 +362,13 @@ fun DrawingToolbar(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("Толщина", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.stroke_width), style = MaterialTheme.typography.labelSmall)
                 Slider(value = strokeWidth, onValueChange = onStrokeWidthChange, valueRange = 5f..50f)
             }
 
             AnimatedVisibility(visible = currentTool is DrawingTool.Marker) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("Прозрачность", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.opacity), style = MaterialTheme.typography.labelSmall)
                     Slider(value = markerOpacity, onValueChange = onMarkerOpacityChange, valueRange = 0.1f..1f)
                 }
             }
