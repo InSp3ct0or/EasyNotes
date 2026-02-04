@@ -8,16 +8,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.volodymyr.easynotes.data.Note
 import com.volodymyr.easynotes.viewmodel.NoteViewModel
@@ -33,32 +36,50 @@ fun NoteDetailScreen(
 ) {
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val density = LocalDensity.current
 
-    // ========== СОСТОЯНИЕ ТЕКСТА ==========
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var selectedNoteColor by remember { mutableStateOf(noteColors.first()) }
-    var textColor by remember { mutableStateOf(Color.Black) }
-    var fontSize by remember { mutableStateOf(16.sp) }
+    // Используем rememberSaveable для сохранения текста при повороте экрана
+    var title by rememberSaveable { mutableStateOf("") }
+    var content by rememberSaveable { mutableStateOf("") }
+    
+    // Для сложных типов данных, таких как Color, используем Argb для сохранения
+    var selectedNoteColorArgb by rememberSaveable { mutableIntStateOf(noteColors.first().toArgb()) }
+    val selectedNoteColor = Color(selectedNoteColorArgb)
+    
+    var textColorArgb by rememberSaveable { mutableIntStateOf(Color.Black.toArgb()) }
+    val textColor = Color(textColorArgb)
+    
+    var fontSizeValue by rememberSaveable { mutableFloatStateOf(16f) }
+    val fontSize = fontSizeValue.sp
 
     var existingNote by remember { mutableStateOf<Note?>(null) }
     val isNewNote = noteId == 0
 
-    // ========== СОСТОЯНИЕ РИСОВАНИЯ ==========
     var isInDrawingMode by remember { mutableStateOf(false) }
     val drawingPaths = remember { mutableStateListOf<DrawingPath>() }
     val redoStack = remember { mutableStateListOf<DrawingPath>() }
 
     var currentTool by remember { mutableStateOf<DrawingTool>(DrawingTool.Brush) }
     var drawingBrush by remember { mutableStateOf<Brush>(SolidColor(Color.Black)) }
-    var strokeWidth by remember { mutableStateOf(10f) }
-    var markerOpacity by remember { mutableStateOf(0.5f) }
+    var strokeWidth by remember { mutableFloatStateOf(10f) }
+    var markerOpacity by remember { mutableFloatStateOf(0.5f) }
 
     val currentPoints = remember { mutableStateListOf<PathPoint>() }
     var toolbarOffset by remember { mutableStateOf(Offset(80f, 800f)) }
 
-    // ========== ГРАДИЕНТ ФОНА ==========
-    var boxHeight by remember { mutableStateOf(0f) }
+    var boxHeight by remember { mutableFloatStateOf(0f) }
+    var titleHeight by remember { mutableFloatStateOf(0f) }
+
+    // Вычисляем минимальную высоту области контента, чтобы она занимала весь экран ниже заголовка
+    val minContentHeight = remember(boxHeight, titleHeight) {
+        val availableHeight = boxHeight - titleHeight
+        if (availableHeight > 0) {
+            with(density) { availableHeight.toDp() }
+        } else {
+            300.dp // Значение по умолчанию, если высота еще не измерена
+        }
+    }
+
     val gradient = Brush.verticalGradient(
         colors = listOf(
             selectedNoteColor.copy(alpha = 0.7f),
@@ -67,15 +88,14 @@ fun NoteDetailScreen(
         endY = boxHeight / 2
     )
 
-    // ========== ЗАГРУЗКА ДАННЫХ ==========
     LaunchedEffect(noteId) {
-        if (!isNewNote) {
+        if (!isNewNote && title.isEmpty() && content.isEmpty()) {
             val note = noteViewModel.getNoteById(noteId)
             note?.let { loadedNote ->
                 existingNote = loadedNote
                 title = loadedNote.title
                 content = loadedNote.content
-                selectedNoteColor = Color(loadedNote.color)
+                selectedNoteColorArgb = loadedNote.color
                 loadedNote.drawingPathsJson?.let {
                     if (it.isNotEmpty()) {
                         drawingPaths.clear()
@@ -93,8 +113,9 @@ fun NoteDetailScreen(
                 title = title.trim(),
                 content = content.trim(),
                 timestamp = existingNote?.timestamp ?: System.currentTimeMillis(),
-                color = selectedNoteColor.toArgb(),
-                drawingPathsJson = if (drawingPaths.isNotEmpty()) PathConverter.pathsToJson(drawingPaths) else null
+                color = selectedNoteColorArgb,
+                drawingPathsJson = if (drawingPaths.isNotEmpty()) PathConverter.pathsToJson(drawingPaths) else null,
+                imagePath = existingNote?.imagePath // Сохраняем путь к изображению
             )
             if (isNewNote) noteViewModel.insert(noteToSave) else noteViewModel.update(noteToSave)
             navController.popBackStack()
@@ -108,7 +129,7 @@ fun NoteDetailScreen(
                 onSaveClick = saveNote,
                 onBackClick = { navController.popBackStack() },
                 noteColor = selectedNoteColor,
-                onNoteColorChange = { selectedNoteColor = it },
+                onNoteColorChange = { selectedNoteColorArgb = it.toArgb() },
                 isInDrawingMode = isInDrawingMode,
                 onConfirmDrawing = { isInDrawingMode = false },
                 onCancelDrawing = { isInDrawingMode = false },
@@ -123,8 +144,8 @@ fun NoteDetailScreen(
                 FormattingToolbar(
                     textColor = textColor,
                     fontSize = fontSize,
-                    onTextColorChange = { textColor = it },
-                    onFontSizeChange = { fontSize = it },
+                    onTextColorChange = { textColorArgb = it.toArgb() },
+                    onFontSizeChange = { fontSizeValue = it.value },
                     onDrawingClick = { isInDrawingMode = true }
                 )
             }
@@ -144,45 +165,39 @@ fun NoteDetailScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState, enabled = !isInDrawingMode)
             ) {
-                // Этот Box будет расширяться по мере добавления контента
-                Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                    // 1. СЛОЙ ТЕКСТА
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp)
-                    ) {
-                        TextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            enabled = !isInDrawingMode,
-                            label = { Text("Тема") },
-                            modifier = Modifier.fillMaxWidth(),
-                            textStyle = MaterialTheme.typography.headlineSmall,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent
-                            )
-                        )
-                        TextField(
-                            value = content,
-                            onValueChange = { content = it },
-                            enabled = !isInDrawingMode,
-                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 1000.dp), // Для прокрутки
-                            textStyle = TextStyle(color = textColor, fontSize = fontSize),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
+                // Поле "Тема" (Title)
+                TextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    enabled = !isInDrawingMode,
+                    label = { Text("Тема") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .onGloballyPositioned { coordinates ->
+                            titleHeight = coordinates.size.height.toFloat()
+                        },
+                    textStyle = MaterialTheme.typography.headlineSmall,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    )
+                )
 
-                    // 2. СЛОЙ РИСОВАНИЯ
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = minContentHeight)
+                ) {
+                    // СЛОЙ РИСОВАНИЯ
                     Canvas(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .matchParentSize() // Теперь Canvas всегда равен размеру Box (минимум до низа экрана)
+                            .zIndex(if (isInDrawingMode) 1f else 0f)
                             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                             .pointerInput(isInDrawingMode) {
                                 if (!isInDrawingMode) return@pointerInput
@@ -232,14 +247,41 @@ fun NoteDetailScreen(
                             )
                         }
                     }
+
+                    // СЛОЙ ТЕКСТА (КОНТЕНТ)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .zIndex(if (isInDrawingMode) 0f else 1f)
+                    ) {
+                        TextField(
+                            value = content,
+                            onValueChange = { content = it },
+                            enabled = !isInDrawingMode,
+                            placeholder = { Text("Начните писать...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = minContentHeight),
+                            textStyle = TextStyle(color = textColor, fontSize = fontSize),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            )
+                        )
+                    }
                 }
             }
 
-            // 3. ПАНЕЛЬ ИНСТРУМЕНТОВ (поверх всего)
             if (isInDrawingMode) {
                 Box(
                     modifier = Modifier
                         .offset { IntOffset(toolbarOffset.x.roundToInt(), toolbarOffset.y.roundToInt()) }
+                        .zIndex(2f)
                         .pointerInput(Unit) {
                             detectDragGestures { change, drag ->
                                 change.consume()

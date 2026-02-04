@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
 
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation(libs.androidx.junit)

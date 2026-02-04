@@ -2,6 +2,7 @@ package com.volodymyr.easynotes.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 import com.volodymyr.easynotes.data.Note
@@ -16,7 +17,8 @@ import com.volodymyr.easynotes.data.Note
             childColumns = ["noteId"],
             onDelete = ForeignKey.CASCADE 
         )
-    ]
+    ],
+    indices = [Index(value = ["noteId"])]
 )
 data class Attachment(
     @PrimaryKey(autoGenerate = true)

@@ -18,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.volodymyr.easynotes.viewmodel.NoteViewModel
 import com.volodymyr.easynotes.viewmodel.NoteViewModelFactory
+import com.volodymyr.easynotes.viewmodel.SortOrder
 import com.volodymyr.easynotes.ui.theme.EasyNotesTheme
 import com.volodymyr.easynotes.EasyNotesApplication
 import com.volodymyr.easynotes.NoteDestinations.DRAWING_ROUTE
@@ -40,15 +41,16 @@ class MainActivity : ComponentActivity() {
         val application = application as EasyNotesApplication
 
         setContent {
-            EasyNotesTheme {
+            val noteViewModel: NoteViewModel = viewModel(
+                factory = NoteViewModelFactory(application.repository)
+            )
+            val isDarkMode by noteViewModel.isDarkMode.observeAsState(initial = false)
+
+            EasyNotesTheme(darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val noteViewModel: NoteViewModel = viewModel(
-                        factory = NoteViewModelFactory(application.repository)
-                    )
-
                     NoteApp(noteViewModel = noteViewModel)
                 }
             }
@@ -65,6 +67,9 @@ fun NoteApp(
     val navController = rememberNavController()
 
     val notes: List<Note> by noteViewModel.allNotes.observeAsState(initial = emptyList())
+    val searchQuery by noteViewModel.searchQuery.observeAsState(initial = "")
+    val sortOrder by noteViewModel.sortOrder.observeAsState(initial = SortOrder.BY_DATE)
+    val isDarkMode by noteViewModel.isDarkMode.observeAsState(initial = false)
 
     NavHost(
         navController = navController,
@@ -75,6 +80,12 @@ fun NoteApp(
         composable(NOTES_ROUTE) {
             NotesScreen(
                 notes = notes,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { noteViewModel.setSearchQuery(it) },
+                sortOrder = sortOrder,
+                onSortOrderChange = { noteViewModel.setSortOrder(it) },
+                isDarkMode = isDarkMode,
+                onDarkModeToggle = { noteViewModel.toggleDarkMode(it) },
                 onNoteClick = { note ->
                     navController.navigate("$NOTE_DETAIL_ROUTE/${note.id}")
                 },

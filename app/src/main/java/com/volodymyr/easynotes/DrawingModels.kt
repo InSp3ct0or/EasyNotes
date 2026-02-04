@@ -23,7 +23,6 @@ data class DrawingPath(
     val alpha: Float = 1f,
     val blendMode: BlendMode = BlendMode.SrcOver
 ) {
-    // Вспомогательный метод для отрисовки (не сохраняется в JSON)
     fun createComposePath(): Path {
         val path = Path()
         points.forEachIndexed { i, point ->
@@ -34,13 +33,13 @@ data class DrawingPath(
     }
 }
 
-// Модель для сохранения (JSON не умеет в Brush)
+// Модель для сохранения
 data class SerializableDrawingPath(
     val points: List<PathPoint>,
-    val color: Int,
     val strokeWidth: Float,
     val alpha: Float,
-    val blendMode: Int
+    val color: Int? = null,
+    val gradientColors: List<Int>? = null
 )
 
 // ==================== КОНВЕРТЕР ПУТЕЙ ====================
@@ -48,23 +47,63 @@ object PathConverter {
     private val gson = Gson()
 
     fun pathsToJson(paths: List<DrawingPath>): String {
-        val serializable = paths.map {
-            val color = if (it.brush is SolidColor) it.brush.value.toArgb() else Color.Black.toArgb()
-            SerializableDrawingPath(it.points, color, it.strokeWidth, it.alpha, 0)
+        val serializable = paths.map { path ->
+            when (val b = path.brush) {
+                is SolidColor -> {
+                    SerializableDrawingPath(
+                        points = path.points,
+                        strokeWidth = path.strokeWidth,
+                        alpha = path.alpha,
+                        color = b.value.toArgb()
+                    )
+                }
+                else -> {
+                    // Пытаемся найти цвета градиента среди наших пресетов
+                    val colors = findColorsForBrush(b)
+                    if (colors.isNotEmpty()) {
+                        SerializableDrawingPath(
+                            points = path.points,
+                            strokeWidth = path.strokeWidth,
+                            alpha = path.alpha,
+                            gradientColors = colors.map { it.toArgb() }
+                        )
+                    } else {
+                        // Фолбек на черный цвет, если градиент не распознан
+                        SerializableDrawingPath(
+                            path.points, path.strokeWidth, path.alpha, Color.Black.toArgb()
+                        )
+                    }
+                }
+            }
         }
         return gson.toJson(serializable)
     }
 
     fun jsonToPaths(json: String): List<DrawingPath> {
+        if (json.isEmpty()) return emptyList()
         return try {
             val type = object : TypeToken<List<SerializableDrawingPath>>() {}.type
             val list: List<SerializableDrawingPath> = gson.fromJson(json, type)
-            list.map {
-                DrawingPath(it.points, SolidColor(Color(it.color)), it.strokeWidth, it.alpha)
+            list.map { s ->
+                val brush = if (s.gradientColors != null && s.gradientColors.size >= 2) {
+                    Brush.linearGradient(s.gradientColors.map { Color(it) })
+                } else {
+                    SolidColor(Color(s.color ?: Color.Black.toArgb()))
+                }
+                DrawingPath(s.points, brush, s.strokeWidth, s.alpha)
             }
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    // Сопоставляем кисть с нашими данными о цветах
+    private fun findColorsForBrush(brush: Brush): List<Color> {
+        // Проверяем наши предопределенные градиенты
+        if (brush == gradientBrushes[0]) return listOf(Color.Red, Color.Yellow)
+        if (brush == gradientBrushes[1]) return listOf(Color.Green, Color.Blue)
+        if (brush == gradientBrushes[2]) return listOf(Color.Magenta, Color.Cyan)
+        return emptyList()
     }
 }
 

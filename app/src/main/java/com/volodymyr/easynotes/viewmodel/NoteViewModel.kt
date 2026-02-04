@@ -1,24 +1,62 @@
 package com.volodymyr.easynotes.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.volodymyr.easynotes.data.Note
 import com.volodymyr.easynotes.data.NoteRepository
-
 import com.volodymyr.easynotes.data.Attachment
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
+enum class SortOrder {
+    BY_DATE,
+    BY_TITLE
+}
 
 class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
 
-    // Примечание: .asLiveData(viewModelScope.coroutineContext) устарел.
-    // Рекомендуется использовать .asLiveData() без аргументов.
-    val allNotes = repository.allNotes.asLiveData()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asLiveData()
 
+    private val _sortOrder = MutableStateFlow(SortOrder.BY_DATE)
+    val sortOrder = _sortOrder.asLiveData()
 
-    // ИСПРАВЛЕНИЕ 6: Изменяем insert, чтобы он возвращал Unit и не требовал колбэка
+    private val _isDarkMode = MutableStateFlow(false)
+    val isDarkMode = _isDarkMode.asLiveData()
+
+    // Объединяем поток всех заметок, поисковый запрос и порядок сортировки
+    val allNotes = combine(
+        repository.allNotes,
+        _searchQuery,
+        _sortOrder
+    ) { notes, query, sortOrder ->
+        val filtered = if (query.isEmpty()) {
+            notes
+        } else {
+            notes.filter { 
+                it.title.contains(query, ignoreCase = true) || 
+                it.content.contains(query, ignoreCase = true) 
+            }
+        }
+
+        when (sortOrder) {
+            SortOrder.BY_DATE -> filtered.sortedByDescending { it.timestamp }
+            SortOrder.BY_TITLE -> filtered.sortedBy { it.title.lowercase() }
+        }
+    }.asLiveData(viewModelScope.coroutineContext)
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun setSortOrder(order: SortOrder) {
+        _sortOrder.value = order
+    }
+
+    fun toggleDarkMode(enabled: Boolean) {
+        _isDarkMode.value = enabled
+    }
+
     fun insert(note: Note) = viewModelScope.launch {
         repository.insert(note)
     }
@@ -31,23 +69,18 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         repository.delete(note)
     }
 
-    // ИСПРАВЛЕНИЕ 7: Добавлен метод для загрузки заметки по ID
     suspend fun getNoteById(noteId: Int): Note? {
         return repository.getNoteById(noteId)
     }
 
-
     fun getAttachmentsForNote(noteId: Int) =
         repository.getAttachmentsForNote(noteId).asLiveData()
-
 
     fun insertAttachment(attachment: Attachment) = viewModelScope.launch {
         repository.insertAttachment(attachment)
     }
 
-
     fun deleteAttachment(attachment: Attachment) = viewModelScope.launch {
         repository.deleteAttachment(attachment)
     }
 }
-// NoteViewModelFactory остается неизменным и не включен в ответ.

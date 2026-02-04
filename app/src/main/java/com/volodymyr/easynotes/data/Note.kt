@@ -14,5 +14,6 @@ data class Note(
     val content: String,
     val timestamp: Long = System.currentTimeMillis(), // Для сортировки
     val color: Int, // Например, можно хранить R.color.red или просто Int код цвета
-    val drawingPathsJson: String? = null // JSON-строка с данными о рисунке
+    val drawingPathsJson: String? = null, // JSON-строка с данными о рисунке
+    val imagePath: String? = null // Путь к изображению
 )
